@@ -41,3 +41,10 @@ roslaunch turtlebot3_navigation turtlebot3_navigation.launch map_file:=$HOME/map
 # Navigation goal :
     - Click the 2D Nav Goal button.
     - Click on a specific point in the map to set a goal position and drag the cursor to the direction              where TurtleBot should be facing at the end.
+
+pos2 = 1.50 -4.32 0
+pos1 = 3.05 -2.48 0
+pos_chute = 0.77 0.87
+
+
+
