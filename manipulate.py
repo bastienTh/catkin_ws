@@ -289,29 +289,44 @@ class MoveGroupInterface(object):
     return self.wait_for_state_update(box_is_attached=True, box_is_known=False, timeout=timeout)
 
   # ================================================================================
-  def detach_box(self, timeout=4):
-    # Detaching Objects from the Robot
-    # We can also detach and remove the object from the planning scene:
-    self.scene.remove_attached_object(self.eef_link, name=self.box_name)
-    return self.wait_for_state_update(box_is_known=True, box_is_attached=False, timeout=timeout)
+  def do_scenario(self):
+    camera = Camera()
+    gripper = Gripper()
 
-    # ================================================================================
-  def add_box(self, timeout=4):
-    # First, we will create a box in the planning scene at the location of the left finger:
-    box_pose = geometry_msgs.msg.PoseStamped()
-    box_pose.header.frame_id = "right_gripper_tip"
-    box_pose.pose.orientation.w = 1.0
-    box_pose.pose.position.z = 0.07 # slightly above the end effector
-    self.box_name = "box"
-    self.scene.add_box(self.box_name, box_pose, size=(0.05, 0.05, 0.05))
-    return self.wait_for_state_update(box_is_known=True, timeout=timeout)
+    # Command gripper open() or close()
+    gripper.open()
 
-    # ================================================================================
-  def remove_box(self, timeout=4):
-    # We can remove the box from the world.
-    self.scene.remove_world_object(self.box_name)
-    # **Note:** The object must be detached before we can remove it from the world
-    return self.wait_for_state_update(box_is_attached=False, box_is_known=False, timeout=timeout)
+    # Take a picture.
+    # The image will be published on topic /io/internal_camera/right_hand_camera/image_rect. It can be retrieved with a subscriber
+    # camera.shoot()
+
+    # move_interface.add_cube()
+
+    move_interface.init_env()
+    move_interface.add_cube()    
+    move_interface.go_to_pose_goal(0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.37 + 0.05+0.18, 1, 0, 0, 0)
+    self.init_env()    
+    self.go_to_pose_goal(0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.37 + 0.05+0.18, 1, 0, 0, 0)
+
+    plan, fr = self.plan_cartesian_path(0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.37+ 0.05 + 0.18, 1, 0, 0, 0,
+     0.23 - 0.34/2, 0.4 + 0.32/2, -0.125 + 0.37 +0.05, 50)
+    self.execute_plan(plan)
+
+    gripper.close()
+    #move_interface.remove_cube()
+    #rospy.sleep(1)
+    move_interface.attach_cube()
+
+    plan, fr = self.plan_cartesian_path(0.23 - 0.34/2, 0.4 + 0.32/2, -0.125 + 0.37 +0.05, 1, 0, 0, 0,
+     0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.37+ 0.05 + 0.18, 50)
+    self.execute_plan(plan)
+
+    move_interface.go_to_pose_goal(0.5, 0, 0.1, 0.707, 0.707, 0, 0)
+    
+    self.go_to_pose_goal(0.5, 0, 0.1, 0.707, 0.707, 0, 0)
+
+    gripper.open()
+    move_interface.detach_cube()
 
 
 
@@ -321,37 +336,10 @@ class MoveGroupInterface(object):
 def main():
   try:
     move_interface = MoveGroupInterface()
-    camera = Camera()
-    gripper = Gripper()
 
-    # Command gripper open() or close()
-    gripper.open()
+    # move_interface.do_scenario()
 
-    # Take a picture.
-    # The image will be published on topic /io/internal_camera/right_hand_camera/image_rect. It can be retrieved with a subscriber
-    camera.shoot()
-
-    # move_interface.add_cube()
-
-    move_interface.init_env()
-    move_interface.add_cube()    
-    move_interface.go_to_pose_goal(0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.37 + 0.05+0.18, 1, 0, 0, 0)
-
-    plan, fr = move_interface.plan_cartesian_path(0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.37+ 0.05 + 0.18, 1, 0, 0, 0,
-     0.23 - 0.34/2, 0.4 + 0.32/2, -0.125 + 0.37 +0.05, 50)
-    move_interface.execute_plan(plan)
-
-    gripper.close()
-    #move_interface.remove_cube()
-    #rospy.sleep(1)
-    move_interface.attach_cube()
-
-    plan, fr = move_interface.plan_cartesian_path(0.23 - 0.34/2, 0.4 + 0.32/2, -0.125 + 0.37 +0.05, 1, 0, 0, 0,
-     0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.37+ 0.05 + 0.18, 50)
-    move_interface.execute_plan(plan)
-
-    move_interface.go_to_pose_goal(0.5, 0, 0.1, 0.707, 0.707, 0, 0)
-    move_interface.detach_cube()
+    
 
     # Tuto
     # move_interface.go_to_joint_state()
