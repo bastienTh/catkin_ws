@@ -136,18 +136,42 @@ class MoveGroupInterface(object):
     box_name = "left_wall"
     self.scene.add_box(box_name, box_pose, size=(0.55, 0.001, 0.21))
     print("==== ")
+    
+
+    return self.wait_for_state_update(box_is_known=True, timeout=timeout)
+    
+  # ================================================================================
+  def add_cube(self):
     print("======= Cube")
     box_pose = geometry_msgs.msg.PoseStamped()
     box_pose.header.frame_id = "base"
     box_pose.pose.orientation.x = 1
-    box_pose.pose.position.z =  0.32
+    box_pose.pose.position.z =  0.36-0.125 + 0.025
     box_pose.pose.position.y = 0.52
     box_pose.pose.position.x = 0.23 - 0.34/2
     box_name = "cube"
     self.scene.add_box(box_name, box_pose, size=(0.05, 0.05, 0.05))
     print("==== ")
 
-    return self.wait_for_state_update(box_is_known=True, timeout=timeout)
+
+  # ================================================================================
+  def attach_cube(self):
+    box_pose = geometry_msgs.msg.PoseStamped()
+    box_pose.header.frame_id = "right_gripper_tip"
+    box_pose.pose.orientation.x = 1
+    box_pose.pose.position.z =  0
+    box_pose.pose.position.y = 0
+    box_pose.pose.position.x = 0
+    box_name = "cube"
+    self.scene.attach_box(self.eef_link, box_name, box_pose, size=(0.05, 0.05, 0.05))
+
+  def remove_cube(self):
+    self.scene.remove_world_object(name="cube")
+
+  def detach_cube(self):
+    self.scene.remove_attached_object(self.eef_link,name="cube")
+    # **Note:** The object must be detached before we can remove it from the world
+    #return self.wait_for_state_update(box_is_attached=False, box_is_known=False, timeout=timeout)
 
   # ================================================================================
   def go_to_joint_state(self):
@@ -252,16 +276,6 @@ class MoveGroupInterface(object):
     # If we exited the while loop without returning then we timed out
     return False
 
-  # ================================================================================
-  def add_box(self, timeout=4):
-    # First, we will create a box in the planning scene at the location of the left finger:
-    box_pose = geometry_msgs.msg.PoseStamped()
-    box_pose.header.frame_id = "right_gripper_tip"
-    box_pose.pose.orientation.w = 1.0
-    box_pose.pose.position.z = 0.07 # slightly above the end effector
-    self.box_name = "box"
-    self.scene.add_box(self.box_name, box_pose, size=(0.05, 0.05, 0.05))
-    return self.wait_for_state_update(box_is_known=True, timeout=timeout)
 
   # ================================================================================
   def attach_box(self, timeout=4):
@@ -283,7 +297,18 @@ class MoveGroupInterface(object):
     self.scene.remove_attached_object(self.eef_link, name=self.box_name)
     return self.wait_for_state_update(box_is_known=True, box_is_attached=False, timeout=timeout)
 
-  # ================================================================================
+    # ================================================================================
+  def add_box(self, timeout=4):
+    # First, we will create a box in the planning scene at the location of the left finger:
+    box_pose = geometry_msgs.msg.PoseStamped()
+    box_pose.header.frame_id = "right_gripper_tip"
+    box_pose.pose.orientation.w = 1.0
+    box_pose.pose.position.z = 0.07 # slightly above the end effector
+    self.box_name = "box"
+    self.scene.add_box(self.box_name, box_pose, size=(0.05, 0.05, 0.05))
+    return self.wait_for_state_update(box_is_known=True, timeout=timeout)
+
+    # ================================================================================
   def remove_box(self, timeout=4):
     # We can remove the box from the world.
     self.scene.remove_world_object(self.box_name)
@@ -309,7 +334,8 @@ def main():
     camera.shoot()
 
     move_interface.init_env()    
-
+    move_interface.add_cube()
+    move_interface.remove_cube()
     # Tuto
     # move_interface.go_to_joint_state()
     # raw_input()
