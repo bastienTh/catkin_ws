@@ -89,7 +89,7 @@ class MoveGroupInterface(object):
     box_pose.header.frame_id = "base"
     box_pose.pose.orientation.w = 1
     box_pose.pose.position.z =  -0.125 + 0.47/2
-    box_pose.pose.position.x = -0.23 + 0.145 - 0.34/2 
+    box_pose.pose.position.x = -0.23 + 0.34/2 
     box_pose.pose.position.y = -0.40 - 0.32/2
     box_name = "distributeur"
     self.scene.add_box(box_name, box_pose, size=(0.34, 0.32, 0.47))
@@ -109,10 +109,20 @@ class MoveGroupInterface(object):
     box_pose.header.frame_id = "base"
     box_pose.pose.orientation.w = 1
     box_pose.pose.position.z =  -0.125 + 0.21/2
-    box_pose.pose.position.x = -0.23
-    box_pose.pose.position.y = -0.40 - 0.32/2
+    box_pose.pose.position.x = -0.23 - 0.55/2
+    box_pose.pose.position.y = -0.8/2
     box_name = "right_wall"
-    self.scene.add_box(box_name, box_pose, size=(0.34, 0.32, 0.47))
+    self.scene.add_box(box_name, box_pose, size=(0.55, 0.001, 0.21))
+    print("==== ")
+    print("======= ADD LEFT WALL")
+    box_pose = geometry_msgs.msg.PoseStamped()
+    box_pose.header.frame_id = "base"
+    box_pose.pose.orientation.w = 1
+    box_pose.pose.position.z =  -0.125 + 0.21/2
+    box_pose.pose.position.x = -0.23 - 0.55/2
+    box_pose.pose.position.y = 0.8/2
+    box_name = "left_wall"
+    self.scene.add_box(box_name, box_pose, size=(0.55, 0.001, 0.21))
     print("==== ")
 
   # ================================================================================
