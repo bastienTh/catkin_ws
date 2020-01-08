@@ -65,7 +65,7 @@ class MoveGroupInterface(object):
     self.eef_link = eef_link
     self.group_names = group_names
 
-  def init_env(self):
+  def init_env(self, timeout = 4):
     print("======= ADD Floor")
     box_pose = geometry_msgs.msg.PoseStamped()
     box_pose.header.frame_id = "base"
@@ -79,7 +79,7 @@ class MoveGroupInterface(object):
     box_pose.header.frame_id = "base"
     box_pose.pose.orientation.w = 1
     box_pose.pose.position.z = -0.125/2
-    box_pose.pose.position.x = 0.09
+    box_pose.pose.position.x = -0.09
     box_pose.pose.position.y = 0
     box_name = "palette"
     self.scene.add_box(box_name, box_pose, size=(0.64, 0.8, 0.125))
@@ -88,11 +88,11 @@ class MoveGroupInterface(object):
     box_pose = geometry_msgs.msg.PoseStamped()
     box_pose.header.frame_id = "base"
     box_pose.pose.orientation.w = 1
-    box_pose.pose.position.z =  -0.125 + 0.47/2
-    box_pose.pose.position.x = -0.23 + 0.34/2 
-    box_pose.pose.position.y = -0.40 - 0.32/2
+    box_pose.pose.position.z =  -0.125 + 0.36/2
+    box_pose.pose.position.x = 0.23 - 0.34/2 
+    box_pose.pose.position.y = 0.40 + 0.32/2
     box_name = "distributeur"
-    self.scene.add_box(box_name, box_pose, size=(0.34, 0.32, 0.47))
+    self.scene.add_box(box_name, box_pose, size=(0.34, 0.32, 0.36))
     print("==== ")
     print("======= ADD MOTOR")
     box_pose = geometry_msgs.msg.PoseStamped()
@@ -100,7 +100,7 @@ class MoveGroupInterface(object):
     box_pose.pose.orientation.w = 1
     box_pose.pose.position.z =  -0.125
     box_pose.pose.position.x = 0
-    box_pose.pose.position.y = 0.97
+    box_pose.pose.position.y = -0.97
     box_name = "motor"
     self.scene.add_box(box_name, box_pose, size=(100, 0.001, 100))
     print("==== ")
@@ -109,8 +109,8 @@ class MoveGroupInterface(object):
     box_pose.header.frame_id = "base"
     box_pose.pose.orientation.w = 1
     box_pose.pose.position.z =  -0.125 + 0.21/2
-    box_pose.pose.position.x = -0.23 - 0.55/2
-    box_pose.pose.position.y = -0.8/2
+    box_pose.pose.position.x = 0.23 + 0.55/2
+    box_pose.pose.position.y = 0.8/2
     box_name = "right_wall"
     self.scene.add_box(box_name, box_pose, size=(0.55, 0.001, 0.21))
     print("==== ")
@@ -119,11 +119,23 @@ class MoveGroupInterface(object):
     box_pose.header.frame_id = "base"
     box_pose.pose.orientation.w = 1
     box_pose.pose.position.z =  -0.125 + 0.21/2
-    box_pose.pose.position.x = -0.23 - 0.55/2
-    box_pose.pose.position.y = 0.8/2
+    box_pose.pose.position.x = 0.23 + 0.55/2
+    box_pose.pose.position.y = -0.8/2
     box_name = "left_wall"
     self.scene.add_box(box_name, box_pose, size=(0.55, 0.001, 0.21))
     print("==== ")
+    print("======= Cube")
+    box_pose = geometry_msgs.msg.PoseStamped()
+    box_pose.header.frame_id = "base"
+    box_pose.pose.orientation.x = 1
+    box_pose.pose.position.z =  0.32
+    box_pose.pose.position.y = 0.52
+    box_pose.pose.position.x = 0.23 - 0.34/2
+    box_name = "cube"
+    self.scene.add_box(box_name, box_pose, size=(0.05, 0.05, 0.05))
+    print("==== ")
+
+    return self.wait_for_state_update(box_is_known=True, timeout=timeout)
 
   # ================================================================================
   def go_to_joint_state(self):
