@@ -7,13 +7,14 @@ import copy
 import moveit_commander
 import moveit_msgs.msg
 import geometry_msgs.msg
+import roslib
+import rospy
+import tf
 from math import pi
 from ros4pro.simulation.gripper import Gripper
 from ros4pro.simulation.camera import Camera
 from std_msgs.msg import String
 from moveit_commander.conversions import pose_to_list
-
-
 
 
 def all_close(goal, actual, tolerance):
@@ -56,6 +57,7 @@ class MoveGroupInterface(object):
     planning_frame = move_group.get_planning_frame()
     eef_link = move_group.get_end_effector_link()
 
+    self. br = tf.TransformBroadcaster()
     self.box_name = ''
     self.robot = robot
     self.scene = scene
@@ -64,6 +66,16 @@ class MoveGroupInterface(object):
     self.planning_frame = planning_frame
     self.eef_link = eef_link
     self.group_names = group_names
+
+  # publish a new tf with a small life expectency
+  # Exemple : 
+  # self.br_publish("le_distrib","base",0.3,0.3,0.3,0,0,0)
+  def br_publish(self,name,basename,x,y,z,qx,qy,qz):
+    self.br.sendTransform((x,y,z),
+                          tf.transformations.quaternion_from_euler(qx,qy,qz),
+                          rospy.Time.now(),
+                          name,
+                          basename)
 
   def init_env(self, timeout = 4):
     print("======= ADD Floor")
