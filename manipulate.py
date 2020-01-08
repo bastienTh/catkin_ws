@@ -12,6 +12,7 @@ from ros4pro.simulation.gripper import Gripper
 from ros4pro.simulation.camera import Camera
 from std_msgs.msg import String
 from moveit_commander.conversions import pose_to_list
+from tf import TransformBroadcaster
 
 
 
@@ -124,40 +125,19 @@ class MoveGroupInterface(object):
     box_name = "left_wall"
     self.scene.add_box(box_name, box_pose, size=(0.55, 0.001, 0.21))
     print("==== ")
-    print("======= Cube")
-    box_pose = geometry_msgs.msg.PoseStamped()
-    box_pose.header.frame_id = "base"
-    box_pose.pose.orientation.x = 1
-    box_pose.pose.position.z =  0.32
-    box_pose.pose.position.y = 0.52
-    box_pose.pose.position.x = 0.23 - 0.34/2
-    box_name = "cube"
-    self.scene.add_box(box_name, box_pose, size=(0.05, 0.05, 0.05))
-    print("==== ")
 
     return self.wait_for_state_update(box_is_known=True, timeout=timeout)
 
   # ================================================================================
-  def go_to_joint_state(self):
-    joint_goal = [0,0,0,0,0,0,0]
-    joint_goal[0] = 0
-    joint_goal[1] = -pi/4
-    joint_goal[2] = 0
-    joint_goal[3] = -pi/2
-    joint_goal[4] = 0
-    joint_goal[5] = pi/3
-    joint_goal[6] = 0
-    self.move_group.go(joint_goal, wait=True)
-    self.move_group.stop()
-    return
-
-  # ================================================================================
-  def go_to_pose_goal(self):
+  def go_to_pose_goal(self, x, y, z, ux, uy, uz, uw):
     pose_goal = geometry_msgs.msg.Pose()
-    pose_goal.orientation.w = 1.0
-    pose_goal.position.x = 0.4
-    pose_goal.position.y = 0.1
-    pose_goal.position.z = 0.4
+    pose_goal.position.x = x
+    pose_goal.position.y = y
+    pose_goal.position.z = z
+    pose_goal.orientation.x = ux
+    pose_goal.orientation.y = uy
+    pose_goal.orientation.z = uz
+    pose_goal.orientation.w = uw
 
     self.move_group.set_pose_target(pose_goal)
     self.move_group.go(wait=True)
@@ -166,19 +146,31 @@ class MoveGroupInterface(object):
     return
 
   # ================================================================================
-  def plan_cartesian_path(self, scale=1):
+  def plan_cartesian_path(self, init_x, init_y, init_z, init_ux, init_uy, init_uz, init_uw, goal_x, goal_y, goal_z, nbpoint = 10):
     waypoints = []
 
-    wpose = self.move_group.get_current_pose().pose
-    wpose.position.z -= scale * 0.1  # First move up (z)
-    wpose.position.y += scale * 0.2  # and sideways (y)
-    waypoints.append(copy.deepcopy(wpose))
+    x_delta = goal_x - init_x
+    y_delta = goal_y - init_y
+    z_delta = goal_z - init_z
 
-    wpose.position.x += scale * 0.1  # Second move forward/backwards in (x)
-    waypoints.append(copy.deepcopy(wpose))
 
-    wpose.position.y -= scale * 0.1  # Third move sideways (y)
-    waypoints.append(copy.deepcopy(wpose))
+    wpose = geometry_msgs.msg.Pose()
+    wpose.position.x = init_x
+    wpose.position.y = init_y
+    wpose.position.z = init_z
+    wpose.orientation.x = init_ux
+    wpose.orientation.y = init_uy
+    wpose.orientation.z = init_uz
+    wpose.orientation.w = init_uw
+
+    k = 1.0/nbpoint
+
+    for i in range(1, nbpoint):
+      wpose.position.x += k * x_delta
+      wpose.position.y += k * y_delta
+
+      wpose.position.z += k * z_delta
+      waypoints.append(copy.deepcopy(wpose))
 
     # We want the Cartesian path to be interpolated at a resolution of 1 cm
     # which is why we will specify 0.01 as the eef_step in Cartesian
@@ -188,20 +180,11 @@ class MoveGroupInterface(object):
     (plan, fraction) = self.move_group.compute_cartesian_path(
                                        waypoints,   # waypoints to follow
                                        0.01,        # eef_step
-                                       0.0)         # jump_threshold
+                                       5)         # jump_threshold
 
     # Note: We are just planning, not asking move_group to actually move the robot yet:
     return plan, fraction
 
-  # ================================================================================
-  def display_trajectory(self, plan):
-    # You can ask RViz to visualize a plan (aka trajectory) for you. But the
-    # group.plan() method does this automatically so this is not that useful
-    # here (it just displays the same trajectory again):
-    display_trajectory = moveit_msgs.msg.DisplayTrajectory()
-    display_trajectory.trajectory_start = self.robot.get_current_state()
-    display_trajectory.trajectory.append(plan)
-    self.display_trajectory_publisher.publish(display_trajectory)
 
   # ================================================================================
   def execute_plan(self, plan):
@@ -296,7 +279,29 @@ def main():
     # The image will be published on topic /io/internal_camera/right_hand_camera/image_rect. It can be retrieved with a subscriber
     camera.shoot()
 
+    tf = TransformBroadcaster()
+
+    rospy.sleep(1)
+
+    tf.sendTransform([0.23 - 0.34/2, 0.4 + 0.32/2, -0.125 + 0.36 +0.05], [1, 0, 0, 0], rospy.Time.now(), 'goal', "base")
+
+
+
     move_interface.init_env()    
+    move_interface.go_to_pose_goal(0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.36 + 0.05+0.18, 1, 0, 0, 0)
+
+    plan, fr = move_interface.plan_cartesian_path(0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.36+ 0.05 + 0.18, 1, 0, 0, 0,
+     0.23 - 0.34/2, 0.4 + 0.32/2, -0.125 + 0.36 +0.05, 50)
+    move_interface.execute_plan(plan)
+
+    gripper.close()
+
+    plan, fr = move_interface.plan_cartesian_path(0.23 - 0.34/2, 0.4 + 0.32/2, -0.125 + 0.36 +0.05, 1, 0, 0, 0,
+     0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.36+ 0.05 + 0.18, 50)
+    move_interface.execute_plan(plan)
+
+    move_interface.go_to_pose_goal(0.5, 0, 0.1, 0.707, 0.707, 0, 0)
+
 
     # Tuto
     # move_interface.go_to_joint_state()
