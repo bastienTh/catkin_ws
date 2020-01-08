@@ -127,15 +127,15 @@ class MoveGroupInterface(object):
     print("======= Cube")
     box_pose = geometry_msgs.msg.PoseStamped()
     box_pose.header.frame_id = "base"
-    box_pose.pose.orientation.w = 1
+    box_pose.pose.orientation.x = 1
     box_pose.pose.position.z =  0.32
     box_pose.pose.position.y = 0.52
-    box_pose.pose.position.x = 0.32
+    box_pose.pose.position.x = 0.23 - 0.34/2
     box_name = "cube"
     self.scene.add_box(box_name, box_pose, size=(0.05, 0.05, 0.05))
     print("==== ")
 
-    return self.wait_for_state_update(box_is_known=true, timeout=timeout)
+    return self.wait_for_state_update(box_is_known=True, timeout=timeout)
 
   # ================================================================================
   def go_to_joint_state(self):
