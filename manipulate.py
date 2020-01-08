@@ -7,14 +7,15 @@ import copy
 import moveit_commander
 import moveit_msgs.msg
 import geometry_msgs.msg
+import roslib
+import rospy
+import tf
 from math import pi
 from ros4pro.simulation.gripper import Gripper
 from ros4pro.simulation.camera import Camera
 from std_msgs.msg import String
 from moveit_commander.conversions import pose_to_list
 from tf import TransformBroadcaster
-
-
 
 
 def all_close(goal, actual, tolerance):
@@ -57,6 +58,7 @@ class MoveGroupInterface(object):
     planning_frame = move_group.get_planning_frame()
     eef_link = move_group.get_end_effector_link()
 
+    self. br = tf.TransformBroadcaster()
     self.box_name = ''
     self.robot = robot
     self.scene = scene
@@ -65,6 +67,16 @@ class MoveGroupInterface(object):
     self.planning_frame = planning_frame
     self.eef_link = eef_link
     self.group_names = group_names
+
+  # publish a new tf with a small life expectency
+  # Exemple : 
+  # self.br_publish("le_distrib","base",0.3,0.3,0.3,0,0,0)
+  def br_publish(self,name,basename,x,y,z,qx,qy,qz):
+    self.br.sendTransform((x,y,z),
+                          tf.transformations.quaternion_from_euler(qx,qy,qz),
+                          rospy.Time.now(),
+                          name,
+                          basename)
 
   def init_env(self, timeout = 4):
     print("======= ADD Floor")
@@ -89,11 +101,11 @@ class MoveGroupInterface(object):
     box_pose = geometry_msgs.msg.PoseStamped()
     box_pose.header.frame_id = "base"
     box_pose.pose.orientation.w = 1
-    box_pose.pose.position.z =  -0.125 + 0.36/2
+    box_pose.pose.position.z =  -0.125 + 0.37/2
     box_pose.pose.position.x = 0.23 - 0.34/2 
     box_pose.pose.position.y = 0.40 + 0.32/2
     box_name = "distributeur"
-    self.scene.add_box(box_name, box_pose, size=(0.34, 0.32, 0.36))
+    self.scene.add_box(box_name, box_pose, size=(0.34, 0.32, 0.37))
     print("==== ")
     print("======= ADD MOTOR")
     box_pose = geometry_msgs.msg.PoseStamped()
@@ -125,8 +137,42 @@ class MoveGroupInterface(object):
     box_name = "left_wall"
     self.scene.add_box(box_name, box_pose, size=(0.55, 0.001, 0.21))
     print("==== ")
+    
 
     return self.wait_for_state_update(box_is_known=True, timeout=timeout)
+    
+  # ================================================================================
+  def add_cube(self):
+    print("======= Cube")
+    box_pose = geometry_msgs.msg.PoseStamped()
+    box_pose.header.frame_id = "base"
+    box_pose.pose.orientation.x = 1
+    box_pose.pose.position.z =  0.37-0.125 + 0.025
+    box_pose.pose.position.y = 0.52
+    box_pose.pose.position.x = 0.23 - 0.34/2
+    box_name = "cube"
+    self.scene.add_box(box_name, box_pose, size=(0.05, 0.05, 0.05))
+    print("==== ")
+
+
+  # ================================================================================
+  def attach_cube(self):
+    box_pose = geometry_msgs.msg.PoseStamped()
+    box_pose.header.frame_id = "right_gripper_tip"
+    box_pose.pose.orientation.x = 1
+    box_pose.pose.position.z =  0
+    box_pose.pose.position.y = 0
+    box_pose.pose.position.x = 0
+    box_name = "cube"
+    self.scene.attach_box(self.eef_link, box_name, box_pose, size=(0.05, 0.05, 0.05))
+
+  def remove_cube(self):
+    self.scene.remove_world_object(name="cube")
+
+  def detach_cube(self):
+    self.scene.remove_attached_object(self.eef_link,name="cube")
+    # **Note:** The object must be detached before we can remove it from the world
+    #return self.wait_for_state_update(box_is_attached=False, box_is_known=False, timeout=timeout)
 
   # ================================================================================
   def go_to_pose_goal(self, x, y, z, ux, uy, uz, uw):
@@ -223,16 +269,6 @@ class MoveGroupInterface(object):
     # If we exited the while loop without returning then we timed out
     return False
 
-  # ================================================================================
-  def add_box(self, timeout=4):
-    # First, we will create a box in the planning scene at the location of the left finger:
-    box_pose = geometry_msgs.msg.PoseStamped()
-    box_pose.header.frame_id = "right_gripper_tip"
-    box_pose.pose.orientation.w = 1.0
-    box_pose.pose.position.z = 0.07 # slightly above the end effector
-    self.box_name = "box"
-    self.scene.add_box(self.box_name, box_pose, size=(0.05, 0.05, 0.05))
-    return self.wait_for_state_update(box_is_known=True, timeout=timeout)
 
   # ================================================================================
   def attach_box(self, timeout=4):
@@ -254,7 +290,18 @@ class MoveGroupInterface(object):
     self.scene.remove_attached_object(self.eef_link, name=self.box_name)
     return self.wait_for_state_update(box_is_known=True, box_is_attached=False, timeout=timeout)
 
-  # ================================================================================
+    # ================================================================================
+  def add_box(self, timeout=4):
+    # First, we will create a box in the planning scene at the location of the left finger:
+    box_pose = geometry_msgs.msg.PoseStamped()
+    box_pose.header.frame_id = "right_gripper_tip"
+    box_pose.pose.orientation.w = 1.0
+    box_pose.pose.position.z = 0.07 # slightly above the end effector
+    self.box_name = "box"
+    self.scene.add_box(self.box_name, box_pose, size=(0.05, 0.05, 0.05))
+    return self.wait_for_state_update(box_is_known=True, timeout=timeout)
+
+    # ================================================================================
   def remove_box(self, timeout=4):
     # We can remove the box from the world.
     self.scene.remove_world_object(self.box_name)
@@ -279,25 +326,21 @@ def main():
     # The image will be published on topic /io/internal_camera/right_hand_camera/image_rect. It can be retrieved with a subscriber
     camera.shoot()
 
-    tf = TransformBroadcaster()
-
-    rospy.sleep(1)
-
-    tf.sendTransform([0.23 - 0.34/2, 0.4 + 0.32/2, -0.125 + 0.36 +0.05], [1, 0, 0, 0], rospy.Time.now(), 'goal', "base")
-
-
+    # move_interface.add_cube()
 
     move_interface.init_env()    
-    move_interface.go_to_pose_goal(0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.36 + 0.05+0.18, 1, 0, 0, 0)
+    move_interface.go_to_pose_goal(0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.37 + 0.05+0.18, 1, 0, 0, 0)
 
-    plan, fr = move_interface.plan_cartesian_path(0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.36+ 0.05 + 0.18, 1, 0, 0, 0,
-     0.23 - 0.34/2, 0.4 + 0.32/2, -0.125 + 0.36 +0.05, 50)
+    plan, fr = move_interface.plan_cartesian_path(0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.37+ 0.05 + 0.18, 1, 0, 0, 0,
+     0.23 - 0.34/2, 0.4 + 0.32/2, -0.125 + 0.37 +0.05, 50)
     move_interface.execute_plan(plan)
 
     gripper.close()
+    # move_interface.remove_cube()
+    # move_interface.attach_cube()
 
-    plan, fr = move_interface.plan_cartesian_path(0.23 - 0.34/2, 0.4 + 0.32/2, -0.125 + 0.36 +0.05, 1, 0, 0, 0,
-     0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.36+ 0.05 + 0.18, 50)
+    plan, fr = move_interface.plan_cartesian_path(0.23 - 0.34/2, 0.4 + 0.32/2, -0.125 + 0.37 +0.05, 1, 0, 0, 0,
+     0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.37+ 0.05 + 0.18, 50)
     move_interface.execute_plan(plan)
 
     move_interface.go_to_pose_goal(0.5, 0, 0.1, 0.707, 0.707, 0, 0)
