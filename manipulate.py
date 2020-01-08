@@ -153,6 +153,9 @@ class MoveGroupInterface(object):
     box_name = "cube"
     self.scene.attach_box(self.eef_link, box_name, box_pose, size=(0.05, 0.05, 0.05))
 
+  def remove_cube(self):
+    self.scene.remove_world_object(name="cube")
+
   def detach_cube(self):
     self.scene.remove_attached_object(self.eef_link,name="cube")
     # **Note:** The object must be detached before we can remove it from the world
@@ -319,8 +322,8 @@ def main():
     camera.shoot()
 
     move_interface.init_env()    
-    move_interface.attach_cube()
-    move_interface.detach_cube()
+    move_interface.add_cube()
+    move_interface.remove_cube()
     # Tuto
     # move_interface.go_to_joint_state()
     # raw_input()
