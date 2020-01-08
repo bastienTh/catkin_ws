@@ -11,7 +11,9 @@ roslaunch turtlebot3_teleop turtlebot3_teleop_key.launch
 # LAUNCH rviz with slam algo (pre configured)
 rosrun rviz rviz -d `rospack find turtlebot3_description`/rviz/model.rviz
 # FRAMES
-frames
+# alias frames="rosrun tf view_frames && evince frames.pdf"
+frames      
+
 # Monitoring values (plugin -> topics -> topic monitor)
 rqt
 
@@ -48,3 +50,6 @@ pos_chute = 0.77 0.87
 
 
 
+
+# ------------ MANIPULATION RELATED -------------------------------------------------
+roslaunch ros4pro manipulate.launch simulate:=true
