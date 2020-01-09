@@ -7,8 +7,8 @@ import torch
 import numpy as np
 
 try:
-    from . import misc
-    from . import vis
+    import misc
+    import vis
 except ImportError:
     import misc
     import vis
@@ -24,10 +24,14 @@ class LeNet(nn.Module):
         super(LeNet, self).__init__()
         self.classes = classes
 
-        ##################
-        # YOUR CODE HERE #
-        ##################
+        
 
+        self.conv1 = nn.Conv2d(1, 6, 5)        
+        self.conv2 = nn.Conv2d(6, 16, 5)
+
+        self.dense1 = nn.Linear(400, 120)        
+        self.dense2 = nn.Linear(120, 84)
+        self.dense3 = nn.Linear(84, 2)
 
     def forward(self, x):
         """
@@ -35,35 +39,36 @@ class LeNet(nn.Module):
         It links the different layers to form the complete function performed by the network.
         """
 
-        ##################
-        # YOUR CODE HERE #
-        ##################
 
-        return out
+        x = F.relu(self.conv1(x))
+        x = F.max_pool2d(x, 2)
+        x = F.relu(self.conv2(x))
+        x = F.max_pool2d(x, 2)   
+
+        x = torch.flatten(x)
+        print(x.shape)
+        x = F.relu(self.dense1(x))        
+        x = F.relu(self.dense2(x))     
+        x = F.relu(self.dense3(x))
+        return x
 
     def infer(self, x):
         """
         This method is called to perform a forward pass on a a single image at inference time.
         It must return the most likely label.
         """
-
-        ##################
-        # YOUR CODE HERE #
-        ##################
-
-        return out
+        x = np.reshape(x, (1, 1, 28, 28))
+        x = torch.tensor(x, dtype=torch.float)
+        res = self.forward((x))#torch.from_numpy
+        label = 1 if (res[0][0]>res[0][1]) else 2
+        return label
 
 
 def batch_mean(batch):
     """
     This function takes 3d tensor containing a batch of data as input and computes its mean. Must return a float.
     """
-
-    ##################
-    # YOUR CODE HERE #
-    ##################
-
-    return None
+    return batch.mean().item()
 
 
 def batch_std(batch):
@@ -71,11 +76,7 @@ def batch_std(batch):
     This function takes a 3d tensor containing a batch of data as input and computes its standard deviation. Must return a float.
     """
 
-    ##################
-    # YOUR CODE HERE #
-    ##################
-
-    return None
+    return batch.std().item()
     
 
 def compute_params_count(model):
@@ -109,7 +110,7 @@ if __name__ == "__main__":
     modules = list(model.modules())
     assert list(modules[1].parameters())[0].shape == torch.Size([6, 1, 5, 5])
     assert list(modules[2].parameters())[0].shape == torch.Size([16, 6, 5, 5])
-    assert list(modules[3].parameters())[0].shape == torch.Size([120, 256])
+    assert list(modules[3].parameters())[0].shape == torch.Size([120, 400])
     assert list(modules[4].parameters())[0].shape == torch.Size([84, 120])
     assert list(modules[5].parameters())[0].shape == torch.Size([2, 84])
     infer = model.infer(np.random.randn(28, 28))

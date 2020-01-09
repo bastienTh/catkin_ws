@@ -71,7 +71,7 @@ def show_binary(orig, binarized, title):
     ax[0].set_title("Original")
     ax[1].imshow(binarized)
     ax[1].set_title("Binary")
-    fig.suptitle(ẗitle)
+    fig.suptitle(title)
     plt.show()
 
 
