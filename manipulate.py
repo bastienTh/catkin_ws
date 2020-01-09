@@ -328,7 +328,13 @@ def main():
 
     # move_interface.do_scenario()
 
-    
+    compute_ik = rospy.ServiceProxy('compute_ik', moveit_msgs.srv.GetPositionFK)
+
+    ik_header = moveit_commander.MoveGroupCommander("right_arm")
+
+    ik_pose = ik_header.get_random_pose()
+
+    print(compute_ik(ik_header, ik_pose, ["right_arm_tip"]))
 
     # Tuto
     # move_interface.go_to_joint_state()
