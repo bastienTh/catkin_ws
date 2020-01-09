@@ -6,12 +6,9 @@ import torch.nn.functional as F
 import torch
 import numpy as np
 
-try:
-    from . import misc
-    from . import vis
-except ImportError:
-    import misc
-    import vis
+
+import misc
+import vis
 
 class LeNet(nn.Module):
 
@@ -34,8 +31,7 @@ class LeNet(nn.Module):
         This method is called on a batch of data to perform a forward pass at training time.
         It links the different layers to form the complete function performed by the network.
         """
-
-        ##################
+        ##########
         # YOUR CODE HERE #
         ##################
 
@@ -63,6 +59,7 @@ def batch_mean(batch):
     # YOUR CODE HERE #
     ##################
 
+    
     return None
 
 
@@ -71,11 +68,9 @@ def batch_std(batch):
     This function takes a 3d tensor containing a batch of data as input and computes its standard deviation. Must return a float.
     """
 
-    ##################
-    # YOUR CODE HERE #
-    ##################
+    print(np.mean(batch))
 
-    return None
+    return 1.0
     
 
 def compute_params_count(model):

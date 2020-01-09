@@ -28,9 +28,7 @@ def rescale(imag, debug=False):
 
     # We rescale the pixels to have minimum value of 0 and max value of 1.
 
-    ##################
-    # YOUR CODE HERE #
-    ##################
+    
 
     if debug:
         plt.imshow(imag)
@@ -49,9 +47,8 @@ def binarize(imag, debug=False):
 
     # We compute an optimal threshold and form a binary image
 
-    ##################
-    # YOUR CODE HERE #
-    ##################
+    th_value = threshold_otsu(imag)
+    binar = imag > th_value
 
     if debug:
         fig, ax = plt.subplots() 
