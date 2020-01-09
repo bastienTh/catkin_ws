@@ -325,6 +325,7 @@ class MoveGroupInterface(object):
 
     gripper.open()
     self.detach_cube()
+    self.remove_cube()
 
 
 
