@@ -1,7 +1,12 @@
 """
 Training of neural network
 """
+
+from __future__ import division
+
 from datetime import datetime
+
+
 
 import torch
 from torch import nn, optim
@@ -37,8 +42,7 @@ def perform_train_epoch(model, trainloader, criterion, optimizer, log_freq=10):
 
         # We compute the loss
 
-        loss = nn.functional.nll_loss(outputs, labels)
-
+        loss = criterion(outputs, labels)
         # We perform the backward pass
 
         loss.backward()
@@ -50,7 +54,8 @@ def perform_train_epoch(model, trainloader, criterion, optimizer, log_freq=10):
         # We update total_loss, total_correct and total
         total_loss += loss.item()
         total += inputs.shape[0]
-        total_correct += total - total_loss
+        _, prediction = torch.max(outputs.data, 1)
+        total_correct += (prediction == labels).sum().item()
         
 
         if idx % log_freq == 0:
@@ -115,8 +120,10 @@ def train(epochs, lr=0.001, momentum=0.9, weight_decay=1e-4):
 
 if __name__ == "__main__":
 
+    print(torch.cuda.device)
+
     print("1) Training for a few epochs...")
-    model, train_loss, train_acc, test_loss, test_acc = train(50)
+    model, train_loss, train_acc, test_loss, test_acc = train(100)
     vis.plot_learning_curves(train_loss, test_loss, "Training Curves")
 
     print("Ok\n\n2) Previewing first layer kernels")
