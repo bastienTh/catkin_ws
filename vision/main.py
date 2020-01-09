@@ -44,13 +44,13 @@ if __name__ == "__main__":
 
     labels = [1, 2]
 
-    checkpoint_path = "checkpoints/final-23:45:12.t7"
+    checkpoint_path = "checkpoints/final-15:24:57.t7"
 
     model = LeNet(classes=labels)
     model.load_state_dict(torch.load(checkpoint_path))
     model.eval()
 
-    test = glob.glob('data/cubes/**/*.jpg', recursive=True)
+    test = glob.glob('src/data/cubes/*/*.jpg')
 
     for path in test:
         print("Testing image {}".format(path))
