@@ -164,12 +164,17 @@ class MoveGroupInterface(object):
     box_pose.pose.position.y = 0
     box_pose.pose.position.x = 0
     box_name = "cube"
-    self.scene.attach_box(self.eef_link, box_name, box_pose, size=(0.05, 0.05, 0.05))
+    grasping_group = 'right_arm'
+    touch_links = self.robot.get_link_names(group=grasping_group)
+    self.scene.attach_box(self.eef_link, box_name, size=(0.05, 0.05, 0.05),touch_links=touch_links)
 
   def remove_cube(self):
     self.scene.remove_world_object(name="cube")
 
   def detach_cube(self):
+    grasping_group = 'right_arm'
+    box_name = "cube"
+    touch_links = self.robot.get_link_names(group=grasping_group)
     self.scene.remove_attached_object(self.eef_link,name="cube")
     # **Note:** The object must be detached before we can remove it from the world
     #return self.wait_for_state_update(box_is_attached=False, box_is_known=False, timeout=timeout)
@@ -297,6 +302,9 @@ class MoveGroupInterface(object):
 
     # move_interface.add_cube()
 
+    move_interface.init_env()
+    move_interface.add_cube()    
+    move_interface.go_to_pose_goal(0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.37 + 0.05+0.18, 1, 0, 0, 0)
     self.init_env()    
     self.go_to_pose_goal(0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.37 + 0.05+0.18, 1, 0, 0, 0)
 
@@ -305,17 +313,20 @@ class MoveGroupInterface(object):
     self.execute_plan(plan)
 
     gripper.close()
-    # move_interface.remove_cube()
-    # move_interface.attach_cube()
+    #move_interface.remove_cube()
+    #rospy.sleep(1)
+    move_interface.attach_cube()
 
     plan, fr = self.plan_cartesian_path(0.23 - 0.34/2, 0.4 + 0.32/2, -0.125 + 0.37 +0.05, 1, 0, 0, 0,
      0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.37+ 0.05 + 0.18, 50)
     self.execute_plan(plan)
 
+    move_interface.go_to_pose_goal(0.5, 0, 0.1, 0.707, 0.707, 0, 0)
+    
     self.go_to_pose_goal(0.5, 0, 0.1, 0.707, 0.707, 0, 0)
 
     gripper.open()
-
+    move_interface.detach_cube()
 
 
 
