@@ -29,39 +29,31 @@ def perform_train_epoch(model, trainloader, criterion, optimizer, log_freq=10):
 
         # We reset gradients to zero
 
-        ##################
-        # YOUR CODE HERE #
-        ##################
+        optimizer.zero_grad()
 
         # We perform the forward pass
 
-        ##################
-        # YOUR CODE HERE #
-        ##################
+        outputs = model(inputs)
 
         # We compute the loss
 
-        ##################
-        # YOUR CODE HERE #
-        ##################
+        loss = nn.functional.nll_loss(outputs, labels)
 
         # We perform the backward pass
 
-        ##################
-        # YOUR CODE HERE #
-        ##################
+        loss.backward()
 
         # We perform the optimization step
 
-        ##################
-        # YOUR CODE HERE #
-        ##################
+        optimizer.step()
 
         # We update total_loss, total_correct and total
-
-        ##################
-        # YOUR CODE HERE #
-        ##################
+        _, prediction = torch.max(outputs.data, 1)
+        total_correct += (prediction == labels).sum().item()
+        total += inputs.shape[0]
+        loss = criterion(outputs, labels)
+        total_loss += loss.item()
+        
 
         if idx % log_freq == 0:
             train_loss = total_loss / idx

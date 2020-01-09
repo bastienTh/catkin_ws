@@ -45,7 +45,7 @@ class LeNet(nn.Module):
         x = F.max_pool2d(x, 2)   
 
         x = x.view(-1, 256)
-        
+
         x = F.relu(self.dense1(x))        
         x = F.relu(self.dense2(x))     
         x = F.relu(self.dense3(x))
@@ -120,9 +120,9 @@ if __name__ == "__main__":
     _, prediction = torch.max(output.data, 1)
     vis.preview_loader(images, prediction, "Inference sample")
    
-    print("Ok\n\n3) Computing the number of parameters")
-    assert isinstance(compute_params_count(model), int)
-    print("Number of parameters of the model: {}".format(compute_params_count(model)))
+    # print("Ok\n\n3) Computing the number of parameters")
+    # assert isinstance(compute_params_count(model), int)
+    # print("Number of parameters of the model: {}".format(compute_params_count(model)))
     
     print("Ok\n\n4) Previewing first layer kernels")
     vis.preview_kernels(list(model.parameters())[0], "Input kernels")
