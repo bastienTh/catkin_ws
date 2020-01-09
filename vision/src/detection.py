@@ -226,7 +226,7 @@ def preprocess_sprites(sprts, debug=False):
         # We make a local copy
         imag = imag.copy()
 
-        # We rescale, inverse and normalize
+        # We rescale, inverse and normalize.
 
         imag = 1.0 - imag
         imag = imag - imag.mean()
