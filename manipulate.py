@@ -139,7 +139,7 @@ class MoveGroupInterface(object):
     print("==== ")
     
 
-    return self.wait_for_state_update(box_is_known=True, timeout=timeout)
+    return self.wait_for_state_update(box_is_known=True)
     
   # ================================================================================
   def add_cube(self):
@@ -154,6 +154,8 @@ class MoveGroupInterface(object):
     self.scene.add_box(box_name, box_pose, size=(0.05, 0.05, 0.05))
     print("==== ")
 
+    return self.wait_for_state_update(box_is_attached=False, box_is_known=True)
+
 
   # ================================================================================
   def attach_cube(self):
@@ -167,6 +169,7 @@ class MoveGroupInterface(object):
     grasping_group = 'right_arm'
     touch_links = self.robot.get_link_names(group=grasping_group)
     self.scene.attach_box(self.eef_link, box_name, size=(0.05, 0.05, 0.05),touch_links=touch_links)
+    return self.wait_for_state_update(box_is_attached=True, box_is_known=False)
 
   def remove_cube(self):
     self.scene.remove_world_object(name="cube")
@@ -177,7 +180,7 @@ class MoveGroupInterface(object):
     touch_links = self.robot.get_link_names(group=grasping_group)
     self.scene.remove_attached_object(self.eef_link,name="cube")
     # **Note:** The object must be detached before we can remove it from the world
-    #return self.wait_for_state_update(box_is_attached=False, box_is_known=False, timeout=timeout)
+    return self.wait_for_state_update(box_is_attached=False, box_is_known=False)
 
   # ================================================================================
   def go_to_pose_goal(self, x, y, z, ux, uy, uz, uw):
@@ -302,10 +305,8 @@ class MoveGroupInterface(object):
 
     # move_interface.add_cube()
 
-    move_interface.init_env()
-    move_interface.add_cube()    
-    move_interface.go_to_pose_goal(0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.37 + 0.05+0.18, 1, 0, 0, 0)
-    self.init_env()    
+    self.init_env()
+    self.add_cube()        
     self.go_to_pose_goal(0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.37 + 0.05+0.18, 1, 0, 0, 0)
 
     plan, fr = self.plan_cartesian_path(0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.37+ 0.05 + 0.18, 1, 0, 0, 0,
@@ -313,20 +314,17 @@ class MoveGroupInterface(object):
     self.execute_plan(plan)
 
     gripper.close()
-    #move_interface.remove_cube()
-    #rospy.sleep(1)
-    move_interface.attach_cube()
+    self.attach_cube()
 
     plan, fr = self.plan_cartesian_path(0.23 - 0.34/2, 0.4 + 0.32/2, -0.125 + 0.37 +0.05, 1, 0, 0, 0,
      0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.37+ 0.05 + 0.18, 50)
     self.execute_plan(plan)
 
-    move_interface.go_to_pose_goal(0.5, 0, 0.1, 0.707, 0.707, 0, 0)
-    
     self.go_to_pose_goal(0.5, 0, 0.1, 0.707, 0.707, 0, 0)
+  
 
     gripper.open()
-    move_interface.detach_cube()
+    self.detach_cube()
 
 
 
@@ -337,15 +335,15 @@ def main():
   try:
     move_interface = MoveGroupInterface()
 
-    # move_interface.do_scenario()
+    move_interface.do_scenario()
 
-    compute_ik = rospy.ServiceProxy('compute_ik', moveit_msgs.srv.GetPositionFK)
+    # compute_ik = rospy.ServiceProxy('compute_ik', moveit_msgs.srv.GetPositionFK)
 
-    ik_header = moveit_commander.MoveGroupCommander("right_arm")
+    # ik_header = moveit_commander.MoveGroupCommander("right_arm")
 
-    ik_pose = ik_header.get_random_pose()
+    # ik_pose = ik_header.get_random_pose()
 
-    print(compute_ik(ik_header, ik_pose, ["right_arm_tip"]))
+    # print(compute_ik(ik_header, ik_pose, ["right_arm_tip"]))
 
     # Tuto
     # move_interface.go_to_joint_state()
