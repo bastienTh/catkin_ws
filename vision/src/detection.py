@@ -27,7 +27,6 @@ def rescale(imag, debug=False):
     imag = imag.copy()
 
     # We rescale the pixels to have minimum value of 0 and max value of 1.
-
     
 
     if debug:
