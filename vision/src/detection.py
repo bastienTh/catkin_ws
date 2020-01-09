@@ -13,7 +13,7 @@ from skimage.segmentation import clear_border
 from scipy.spatial import ConvexHull
 
 try:
-    from . import vis
+    import vis
 except ImportError:
     import vis
 
@@ -25,12 +25,12 @@ def rescale(imag, debug=False):
     """
 
     imag = imag.copy()
-
+    imag = imag/255.0
     # We rescale the pixels to have minimum value of 0 and max value of 1.
     
 
     if debug:
-        plt.imshow(imag)
+        plt.imshow(imag, cmap="gray")
         plt.title("rescaled image")
         plt.colorbar()
         plt.show()
@@ -45,14 +45,16 @@ def binarize(imag, debug=False):
     imag = imag.copy()
 
     # We compute an optimal threshold and form a binary image
-
     th_value = threshold_otsu(imag)
     binar = imag > th_value
-
+    binar = closing(binar, square(20))
+    clear_border(binar)
+    binar = convex_hull_object(binar)
+    
     if debug:
         fig, ax = plt.subplots() 
-        ax.imshow(imag)
-        ax.imshow(binar, alpha=0.4)
+        #ax.imshow(imag, cmap='gray')
+        ax.imshow(binar, alpha=0.4, cmap='gray')
         fig.suptitle("Binary image")
         plt.show()
 
@@ -92,9 +94,34 @@ def reorder_contour(contour):
 
     # We reorder the points
 
-    ##################
-    # YOUR CODE HERE #
-    ##################
+
+    contour_x = np.array(contour)[:,0]
+    contour_y = np.array(contour)[:,1]
+
+    sum = contour_x + contour_y
+    index_1 = np.where(sum == np.amax(sum))[0][0]
+    index_3 = np.where(sum == np.amin(sum))[0][0]
+    min_x=1000.0
+    min_index_x=0
+    max_x = 0.0
+    max_index_x=0
+    for i in range(4):
+        if (not(i==index_1 or i==index_3)):
+            if (contour_x[i]<min_x):
+                min_x = contour_x[i]
+                min_index_x = i
+            if (contour_x[i]>max_x):
+                max_x = contour_x[i]
+                max_index_x = i
+    index_2 = min_index_x
+    index_4 = max_index_x
+    contour = np.array([
+        contour[index_1].tolist(),
+        contour[index_2].tolist(),
+        contour[index_3].tolist(),
+        contour[index_4].tolist()
+    ])
+
 
     return contour
 
@@ -109,29 +136,29 @@ def get_box_contours(imag, debug=False):
     imag = imag.copy()
 
     # We turn the image to a binary one
-
-    ##################
-    # YOUR CODE HERE #
-    ##################
+    binar = binarize(imag)
 
     # We extract the contours, and keep only the largest ones.
+    ctrs = find_contours(binar, 0.5)
+    surface =[]
+    for ctr in ctrs:
+        surface.append(ConvexHull(ctr).area)
+    mean = sum(surface)/len(surface)
+    
+    ctrs = [ctr for i, ctr in enumerate(ctrs) if surface[i] > mean/2]
 
-    ##################
-    # YOUR CODE HERE #
-    ##################
 
     # We approximate the contours by squares and reorder the points
     # Use `approximate_square`
+    ctrs = [approximate_square(c) for c in ctrs]
+    ctrs = [reorder_contour(c) for c in ctrs]
 
-    ##################
-    # YOUR CODE HERE #
-    ##################
 
     if debug:
         plt.imshow(imag)
         plt.imshow(binar, alpha=0.4)
         for coords in ctrs:
-            plt.plot(coords[:, 0], coords[:, 1], 'og', linewidth=2)
+            plt.plot(coords[:,0], coords[:, 1], 'og', linewidth=2)
             plt.plot(coords.mean(axis=0)[0], coords.mean(axis=0)[1], 'or')
             ind = [1, 2, 3, 4]
             for i, txt in enumerate(ind):
@@ -158,15 +185,21 @@ def get_sprites(imag, ctrs, debug=False):
 
         # We compute the projective transform
 
-        ##################
-        # YOUR CODE HERE #
-        ##################
+        destination_points = np.array(
+            [
+                [28, 28],
+                [0, 28],
+                [0, 0],
+                [28, 0]
+            ]
+        )
+
+        tform = tf.estimate_transform('similarity', contour, destination_points)
+
 
         # We transform the image
 
-        ##################
-        # YOUR CODE HERE #
-        ##################
+        warped = tf.warp(imag, inverse_map=tform.inverse)[:28, :28]
 
         if debug:
             _, axis = plt.subplots(nrows=2, figsize=(8, 3))
@@ -194,9 +227,9 @@ def preprocess_sprites(sprts, debug=False):
 
         # We rescale, inverse and normalize
 
-        ##################
-        # YOUR CODE HERE #
-        ##################
+        imag = 1.0 - imag
+        imag = imag - imag.mean()
+        imag = imag/imag.std()
 
         if debug:
             plt.imshow(imag)
@@ -212,7 +245,7 @@ def preprocess_sprites(sprts, debug=False):
 if __name__ == "__main__":
 
     print("0) Getting images:") 
-    test_data = glob.glob('data/cubes/*/*.jpg', recursive=True)
+    test_data = glob.glob('data/cubes/*/*.jpg')
     print("Found test images: {}".format(test_data))
     images = []
     for path in test_data:
@@ -221,13 +254,13 @@ if __name__ == "__main__":
     vis.show_image(images[0], "Image sample")
 
     print("Ok\n\n1) Rescaling image")
-    rescaled = rescale(images[0], debug=True)
-    assert rescaled.max() == 1.
-    assert rescaled.min() == 0. 
+    rescaled = rescale(images[0], debug=False)
+    assert rescaled.max() <= 1.
+    assert rescaled.min() >= 0. 
 
-    print("OK\n\n2) Binarizing image")
-    for im in images:
-        binarize(im, debug=False)
+    #print("OK\n\n2) Binarizing image")
+    #for im in images:
+    #    binarize(im, debug=False)
 
     print("OK\n\n3) Getting boxes")
     ctrs = []
