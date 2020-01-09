@@ -48,11 +48,9 @@ def perform_train_epoch(model, trainloader, criterion, optimizer, log_freq=10):
         optimizer.step()
 
         # We update total_loss, total_correct and total
-        _, prediction = torch.max(outputs.data, 1)
-        total_correct += (prediction == labels).sum().item()
-        total += inputs.shape[0]
-        loss = criterion(outputs, labels)
         total_loss += loss.item()
+        total += inputs.shape[0]
+        total_correct += total - total_loss
         
 
         if idx % log_freq == 0:
