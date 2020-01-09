@@ -186,15 +186,21 @@ def get_sprites(imag, ctrs, debug=False):
 
         # We compute the projective transform
 
-        ##################
-        # YOUR CODE HERE #
-        ##################
+        destination_points = np.array(
+            [
+                [28, 28],
+                [0, 28],
+                [0, 0],
+                [28, 0]
+            ]
+        )
+
+        tform = tf.estimate_transform('similarity', contour, destination_points)
+
 
         # We transform the image
 
-        ##################
-        # YOUR CODE HERE #
-        ##################
+        warped = tf.warp(imag, inverse_map=tform.inverse)[:28, :28]
 
         if debug:
             _, axis = plt.subplots(nrows=2, figsize=(8, 3))
@@ -222,9 +228,9 @@ def preprocess_sprites(sprts, debug=False):
 
         # We rescale, inverse and normalize
 
-        ##################
-        # YOUR CODE HERE #
-        ##################
+        imag = 1.0 - imag
+        imag = imag - imag.mean()
+        imag = imag/imag.std()
 
         if debug:
             plt.imshow(imag)
@@ -260,7 +266,7 @@ if __name__ == "__main__":
     print("OK\n\n3) Getting boxes")
     ctrs = []
     for im in images:
-        ctrs.append(get_box_contours(im, debug=True))
+        ctrs.append(get_box_contours(im, debug=False))
 
     print("OK\n\n4) Getting sprites")
     sprites = []
