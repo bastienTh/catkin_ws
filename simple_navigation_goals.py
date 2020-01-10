@@ -212,11 +212,13 @@ if __name__ == "__main__":
         rospy.on_shutdown(nav_goals._shutdown)
 
         while True:
-            if not (nav_goals.go_to(2.92, -2.32, 0.08*math.pi)):
+            if not (nav_goals.go_to(3.05, -2.48, 0)):
                 break
-            if not (nav_goals.go_to(1.61, -4.28, 0.48 * math.pi)):
+            if not (nav_goals.go_to(1.5, -4.32, 0)):
                 break
-            if not (nav_goals.go_to(0.6, 1.16, 0.83 * math.pi)):
+            if not (nav_goals.go_to(0.77, 0.87, 0)):
+                break
+            if not (nav_goals.go_to(0.77, 0.87, math.pi)):
                 break
 
         rospy.spin()
