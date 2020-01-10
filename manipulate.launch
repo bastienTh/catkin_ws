@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Set to false when working with an actual Sawyer robot -->
+  <arg name="simulate" default="true" />
+  <param name="ros4pro/light_simulation" value="$(arg simulate)"/>
+
+  <!-- Set to false to disable the vision debug display -->
+  <arg name="debug" default="true" />
+  <param name="ros4pro/vision/debug" value="$(arg debug)"/>
+
+  <!-- Start simulator -->
+  <!--<include file="$(find sawyer_gazebo)/launch/sawyer_world.launch" if="$(arg simulate)"/>-->
+
+  <!-- Start MoveIt for Sawyer -->
+  <include file="$(find sawyer_moveit_config)/launch/sawyer_moveit.launch">
+      <arg name="electric_gripper" value="true" />
+      <arg name="simulate" value="$(arg simulate)" />
+  </include>
+
+  <!-- Start the vision server node -->
+  <node name="ros4pro_vision_server" pkg="ros4pro" type="vision.py" respawn="false" output="screen"></node>
+
+  <!-- Start the manipulate node -->
+  <node name="ros4pro_manipulate" pkg="ros4pro" type="manipulate.py" respawn="false" output="screen">
+  </node>
+
+  <!-- Start the head screen display -->
+  <node name="ros4pro_display" pkg="ros4pro" type="display.py" respawn="false" output="screen" unless="$(arg simulate)"/>
+
+</launch>
