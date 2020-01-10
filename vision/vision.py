@@ -11,11 +11,11 @@ import torch
 import collections
 import matplotlib.pyplot as plt
 import rospy
-
+import os
 import numpy as np
-
+from cv_bridge import CvBridge
 from ros4pro.srv import VisionInfer, VisionInferResponse
-
+import cv2
 LABELS=[1, 2]
 
 Box = collections.namedtuple('Box', 'contour sprite label')
@@ -33,10 +33,17 @@ def angle_between(v1, v2):
     return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
 
 def detect_box_and_number(image):
-
+    bridge = CvBridge()
+    print image.im.encoding
+    print len(image.im.data)
+    image = bridge.imgmsg_to_cv2(image.im, desired_encoding = "passthrough")
+    cv2.imshow(image)
+    cv2.waitKey(1)
+    print(type(image))
+    print("=====================================================OH")
     labels = [1, 2]
 
-    checkpoint_path = "checkpoints/final-15:24:57.t7"
+    checkpoint_path = "/home/hugo/catkin_ws/src/ros4pro/scripts/vision/checkpoints/final-15:24:57.t7"
 
     model = LeNet(classes=labels)
     model.load_state_dict(torch.load(checkpoint_path))
@@ -66,8 +73,8 @@ def detect_box_and_number(image):
 
 def detect_box_and_number_server():
     rospy.init_node('detect_box_and_number_server')
-    s = rospy.Service('detect_box_and_number_server', VisionInfer, detect_box_and_number)
-
+    s = rospy.Service('detect_box_and_number', VisionInfer, detect_box_and_number)
+    rospy.spin()
 
 def process(image, model, debug=None):
     """
@@ -100,7 +107,6 @@ def process(image, model, debug=None):
 if __name__ == "__main__":
 
     detect_box_and_number_server()
-
     # import glob
 
     # labels = [1, 2]

@@ -16,7 +16,7 @@ from ros4pro.simulation.camera import Camera
 from std_msgs.msg import String
 from moveit_commander.conversions import pose_to_list
 from tf import TransformBroadcaster
-
+from ros4pro.srv import VisionInfer
 
 def all_close(goal, actual, tolerance):
   """
@@ -181,6 +181,18 @@ class MoveGroupInterface(object):
     self.scene.remove_attached_object(self.eef_link,name="cube")
     # **Note:** The object must be detached before we can remove it from the world
     return self.wait_for_state_update(box_is_attached=False, box_is_known=False)
+ 
+ # ================================================================================ 
+
+  def get_pose_goal(self, image):
+    rospy.wait_for_service('detect_box_and_number')
+    print("Ok")
+    try:
+        detect_box_and_server_number = rospy.ServiceProxy('detect_box_and_number', VisionInfer)
+        pose_goal = detect_box_and_server_number(image)
+        return pose_goal
+    except rospy.ServiceException, e:
+        print "Service call failed: %s"%e
 
   # ================================================================================
   def go_to_pose_goal(self, x, y, z, ux, uy, uz, uw):
@@ -198,6 +210,44 @@ class MoveGroupInterface(object):
     self.move_group.stop()
     self.move_group.clear_pose_targets()
     return
+
+   # ================================================================================   
+  def go_to_joint_state(self):
+
+    group = self.move_group
+    ## Planning to a Joint Goal
+    joint_goal = [0,0,0,0,0,0,0]
+    joint_goal[0] = -1.27
+    joint_goal[1] = -2.0
+    joint_goal[2] = 2.8
+    joint_goal[3] = 1.5
+    joint_goal[4] = 0.11
+    joint_goal[5] = -0.38
+    joint_goal[6] = 3.0
+
+    # The go command can be called with joint values, poses, or without any
+    # parameters if you have already set the pose or joint target for the group
+    group.go(joint_goal, wait=True)
+
+    # Calling ``stop()`` ensures that there is no residual movement
+    group.stop()
+ # ================================================================================
+
+
+  def compute_sawyer_pose(pose_x, pose_y, pose_theta):
+      x = (pose_x[0] * -752/2) * 0.31/752
+      y = (pose_y[0] * -480/2) * 0.195/480
+      z = 0.28 - 0.05
+      
+      camera_T_cube[[x, y, z], [0, 0, pose_theta, 0]]
+      self.tfb.sendTransform(camera_T_cube[0], camera_T_cube[0], rospy.Time.now(), "cube{}".format(i), "right_hand_camera")
+      cube_T_gripper = [[0,0,-0.18], [0,0,-1,0]]
+      base_T_camera = self.tfl.lookupTransform("base", "right_hand_camera", rospy.Time(0))
+      base_T_cube = multiply_transform(base_T_camera, camera_T_cube)
+      self.tfb.sendTransform(base_T_cube[0], base_T_cube[1], rospy.Time.now(), "here", "base")
+
+      return base_T_cube
+
 
   # ================================================================================
   def plan_cartesian_path(self, init_x, init_y, init_z, init_ux, init_uy, init_uz, init_uw, goal_x, goal_y, goal_z, nbpoint = 10):
@@ -276,6 +326,7 @@ class MoveGroupInterface(object):
 
     # If we exited the while loop without returning then we timed out
     return False
+  
 
 
   # ================================================================================
@@ -299,18 +350,36 @@ class MoveGroupInterface(object):
     # Command gripper open() or close()
     gripper.open()
 
-    # Take a picture.
-    # The image will be published on topic /io/internal_camera/right_hand_camera/image_rect. It can be retrieved with a subscriber
-    # camera.shoot()
+    
 
     # move_interface.add_cube()
 
-    self.init_env()
-    self.add_cube()        
-    self.go_to_pose_goal(0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.37 + 0.05+0.18, 1, 0, 0, 0)
+    #self.init_env()
+    #self.add_cube()
+    
+    # Take a picture.
+    # The image will be published on topic /io/internal_camera/right_hand_camera/image_rect. It can be retrieved with a subscriber
+    
+    #self.go_to_joint_state()
+    rospy.sleep(1)
+    image = camera.shoot()     
+    
+    visioninfer = self.get_pose_goal(image)
+    print(visioninfer)
+    label = visioninfer.label[0]
+    x = visioninfer.x[0]
+    y = visioninfer.y[0]
+    theta = visioninfer.theta[0]
 
-    plan, fr = self.plan_cartesian_path(0.23 -0.34/2, 0.4 + 0.32/2, -0.125+0.37+ 0.05 + 0.18, 1, 0, 0, 0,
-     0.23 - 0.34/2, 0.4 + 0.32/2, -0.125 + 0.37 +0.05, 50)
+    base_T_cube = self.get_pose_goal(x, y, theta)
+
+    self.go_to_pose_goal(base_T_cube.x, base_T_cube.y, base_T_cube.z + 0.18, base_T_cube.ux, 
+    base_T_cube.uy, base_T_cube.uz, base_T_cube.uw)
+
+    plan, fr = self.plan_cartesian_path(base_T_cube.x, base_T_cube.y, base_T_cube.z, base_T_cube.ux, 
+    base_T_cube.uy, base_T_cube.uz, base_T_cube.uw, 50)
+
+
     self.execute_plan(plan)
 
     gripper.close()
@@ -335,7 +404,7 @@ class MoveGroupInterface(object):
 def main():
   try:
     move_interface = MoveGroupInterface()
-
+    
     move_interface.do_scenario()
 
     # compute_ik = rospy.ServiceProxy('compute_ik', moveit_msgs.srv.GetPositionFK)
