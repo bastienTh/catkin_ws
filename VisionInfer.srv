@@ -4,3 +4,4 @@ std_msgs/UInt8[] label
 std_msgs/Float64[] x
 std_msgs/Float64[] y
 std_msgs/Float64[] theta
+std_msgs/Float64[] length_px
