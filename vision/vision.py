@@ -59,6 +59,8 @@ def detect_box_and_number(image):
 
         res.theta.append(angle_between(ref_point, box.contour[0]))
 
+        res.length_px = np.linalg.norm(box.contour[0] - box.contour[1])
+
 
     return res
 
