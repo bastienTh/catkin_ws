@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 """
 This script loads an image, extracts sprites, and infer the classes with the network trained earlier.
 """
