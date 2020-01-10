@@ -1,0 +1,6 @@
+sensor_msgs/Image im
+---
+std_msgs/UInt8[] label
+std_msgs/Float64[] x
+std_msgs/Float64[] y
+std_msgs/Float64[] theta
