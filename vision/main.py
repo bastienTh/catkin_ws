@@ -12,6 +12,8 @@ LABELS=[1, 2]
 
 Box = collections.namedtuple('Box', 'contour sprite label')
 
+ReqImage
+
 def process(image, model, debug=None):
     """
     This function processes an image given a model, and returns a list of Box.
@@ -36,6 +38,8 @@ def process(image, model, debug=None):
             plt.show()
 
     return boxes
+
+
 
 
 if __name__ == "__main__":
